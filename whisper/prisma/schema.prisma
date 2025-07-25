@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id // Clerk user ID
+  email         String    @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Subscription info
+  subscriptionTier     String?   @default("none") // "none", "starter", "pro"
+  subscriptionStatus   String?   @default("inactive") // "active", "canceled", "past_due"
+  subscriptionId       String?   // RevenueCat subscription ID
+  subscriptionEndsAt   DateTime? // When subscription expires
+  
+  @@map("users")
+}
+
+model Whisper {
+  id                String       @id @default(uuid())
+  title             String
+  userId            String
+  createdAt         DateTime     @default(now())
+  fullTranscription String
+  audioTracks       AudioTrack[]
+
+  transformations Transformation[]
+}
+
+model Transformation {
+  id           String   @id @default(uuid())
+  whisperId    String
+  whisper      Whisper? @relation(fields: [whisperId], references: [id])
+  isGenerating Boolean  @default(true)
+  typeName     String
+  text         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AudioTrack {
+  id                   String   @id @default(uuid())
+  fileUrl              String
+  partialTranscription String
+  createdAt            DateTime @default(now())
+  whisper              Whisper  @relation(fields: [whisperId], references: [id])
+  whisperId            String
+  language             String? // Added for language selection
+}
