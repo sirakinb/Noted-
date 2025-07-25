@@ -1,0 +1,30 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject",
+        "s3:ListBucket",
+        "s3:PutObjectAcl",
+        "s3:GetObjectAcl"
+      ],
+      "Resource": [
+        "arn:aws:s3:::noted-audio-files",
+        "arn:aws:s3:::noted-audio-files/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sts:GetFederationToken"
+      ],
+      "Resource": [
+        "arn:aws:sts::039612844713:federated-user/*",
+        "arn:aws:iam::039612844713:user/noted-s3-user"
+      ]
+    }
+  ]
+} 
