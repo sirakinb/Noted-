@@ -320,8 +320,12 @@ export async function getMinutesLeft(userId: string) {
     // Check current usage with the rate limiter
     const result = await limiter.getRemaining(userId);
     
+    // If getRemaining returns null/undefined, user hasn't hit the limiter yet
+    // so they should have their full limit available
+    const remaining = result !== null && result !== undefined ? result : defaultMinutes;
+    
     return {
-      remaining: result,
+      remaining: remaining,
       limit: defaultMinutes,
     };
   } catch (error) {
@@ -382,8 +386,12 @@ export async function getTransformationsLeft(userId: string) {
     // Check current usage with the rate limiter
     const result = await limiter.getRemaining(userId);
     
+    // If getRemaining returns null/undefined, user hasn't hit the limiter yet
+    // so they should have their full limit available
+    const remaining = result !== null && result !== undefined ? result : defaultTransformations;
+    
     return {
-      remaining: result,
+      remaining: remaining,
       limit: defaultTransformations,
     };
   } catch (error) {
