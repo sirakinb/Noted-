@@ -317,11 +317,11 @@ export async function getMinutesLeft(userId: string) {
       };
     }
 
-    // For new users, they should have full limits available
-    // We'll use a different approach - just return the default limits for now
-    // The actual consumption happens in limitMinutes()
+    // Check current usage with the rate limiter
+    const result = await limiter.getRemaining(userId);
+    
     return {
-      remaining: defaultMinutes,
+      remaining: result,
       limit: defaultMinutes,
     };
   } catch (error) {
@@ -379,11 +379,11 @@ export async function getTransformationsLeft(userId: string) {
       };
     }
 
-    // For new users, they should have full limits available
-    // We'll use a different approach - just return the default limits for now
-    // The actual consumption happens in limitTransformations()
+    // Check current usage with the rate limiter
+    const result = await limiter.getRemaining(userId);
+    
     return {
-      remaining: defaultTransformations,
+      remaining: result,
       limit: defaultTransformations,
     };
   } catch (error) {
