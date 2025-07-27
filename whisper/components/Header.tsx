@@ -16,16 +16,15 @@ import { ModalCustomApiKey } from "./hooks/ModalCustomApiKey";
 import { toast } from "sonner";
 import { useTogetherApiKey } from "./TogetherApiKeyProvider";
 import { useLimits } from "./hooks/useLimits";
+import { useOrganization } from "@clerk/nextjs";
 
 export function Header() {
   const pathname = usePathname();
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const [mounted, setMounted] = React.useState(false);
   const { apiKey } = useTogetherApiKey();
 
   const isBYOK = !!apiKey;
-
-  const { transformationsData, isLoading } = useLimits();
 
   React.useEffect(() => {
     setMounted(true);
@@ -35,8 +34,11 @@ export function Header() {
   const isSingleWhisperPage =
     pathname.startsWith("/whispers/") && pathname.length > 11;
 
-  if (!mounted) {
-    // Optionally, you can return a skeleton or null while mounting
+  // Call useLimits unconditionally (React hooks rule)
+  const { transformationsData, isTransformationsLoading } = useLimits();
+
+  if (!mounted || !isLoaded) {
+    // Show skeleton while mounting or loading
     return (
       <div className="h-[63px] w-full bg-gray-50 border-b border-gray-200" />
     );
@@ -76,31 +78,29 @@ export function Header() {
           </SignUpButton>
         </SignedOut>
         <SignedIn>
-          <Link href="/subscribe">
+          <Link href="/pricing">
             <Button 
               variant="outline" 
               className="text-sm font-medium bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-0 hover:from-blue-700 hover:to-indigo-700"
             >
-              Subscribe
+              Pricing
             </Button>
           </Link>
           <Button
             className="w-[51px] h-[30px] relative rounded-lg bg-white hover:bg-gray-50 border-[0.5px] border-gray-200"
             onClick={() => {
-              if (!isLoading) {
-                toast(
-                  `You got ${
-                    transformationsData?.remaining === null || transformationsData?.remaining === undefined
-                    ? "unlimited"
-                    : transformationsData.remaining
-                  } transformations left for your notes`
-                );
+              if (!isTransformationsLoading && transformationsData) {
+                const remaining = transformationsData.remaining;
+                const displayText = remaining === null || remaining === undefined
+                  ? "unlimited"
+                  : remaining.toString();
+                toast(`You got ${displayText} transformations left for your notes`);
               }
             }}
           >
             <img src="/spark.svg" className="size-4 min-w-4" />
             <p className="text-sm font-medium text-left text-[#1e2939]">
-              {isLoading
+              {isTransformationsLoading
                 ? "..."
                 : transformationsData?.remaining === null || transformationsData?.remaining === undefined
                 ? "∞"

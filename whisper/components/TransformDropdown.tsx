@@ -15,14 +15,14 @@ export function TransformDropdown({
   onTransform: (type: string) => void;
   isStreaming?: boolean;
 }) {
-  const { isLoading, transformationsData } = useLimits();
+  const { isTransformationsLoading, transformationsData } = useLimits();
 
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         asChild
         disabled={
-          isStreaming || isLoading || (transformationsData?.remaining !== null && transformationsData?.remaining !== undefined && transformationsData.remaining === 0)
+          isStreaming || isTransformationsLoading || (transformationsData?.remaining !== null && transformationsData?.remaining !== undefined && transformationsData.remaining === 0)
         }
       >
         <button

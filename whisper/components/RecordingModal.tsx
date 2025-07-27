@@ -57,7 +57,7 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
   const { apiKey } = useTogetherApiKey();
   const isBYOK = !!apiKey;
 
-  const { isLoading, minutesData } = useLimits();
+  const { isMinutesLoading, minutesData } = useLimits();
 
   const router = useRouter();
   const transcribeMutation = useMutation(
@@ -256,7 +256,7 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
 
             {!recording && (
               <div className="w-full flex flex-col py-3 px-5 border-t border-gray-200">
-                {isLoading ? (
+                {isMinutesLoading ? (
                   <span className="text-sm text-[#4a5565]">Loading...</span>
                 ) : (
                   <RecordingMinutesLeft

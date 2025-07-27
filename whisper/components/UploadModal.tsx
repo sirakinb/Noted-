@@ -48,7 +48,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
     trpc.whisper.transcribeFromS3.mutationOptions()
   );
   const queryClient = useQueryClient();
-  const { minutesData, isLoading } = useLimits();
+  const { minutesData, isMinutesLoading } = useLimits();
 
   const handleDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -179,7 +179,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
                     </div>
                   </div>
                   <div className="relative overflow-hidden px-5 py-3 w-full border-t border-gray-200">
-                    {isLoading ? (
+                    {isMinutesLoading ? (
                       <span className="text-sm text-[#4a5565]">Loading...</span>
                     ) : (
                       <RecordingMinutesLeft

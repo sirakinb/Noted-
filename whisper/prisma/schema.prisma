@@ -20,11 +20,20 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
-  // Subscription info
-  subscriptionTier     String?   @default("none") // "none", "starter", "pro"
-  subscriptionStatus   String?   @default("inactive") // "active", "canceled", "past_due"
-  subscriptionId       String?   // RevenueCat subscription ID
+  // Subscription info - aligned with Clerk billing
+  subscriptionTier     String?   @default("free") // "free", "trial", "starter", "pro"
+  subscriptionStatus   String?   @default("active") // "active", "canceled", "past_due", "inactive"
+  subscriptionId       String?   // Stripe subscription ID (if paid plan)
   subscriptionEndsAt   DateTime? // When subscription expires
+  
+  // Clerk integration
+  clerkPlanId          String?   // Plan ID stored in Clerk publicMetadata
+  lastSyncedAt         DateTime? // Last time we synced with Clerk
+  
+  // Usage tracking (optional - can be handled by Redis rate limiting)
+  monthlyMinutesUsed   Int?      @default(0)
+  monthlyTransformationsUsed Int? @default(0)
+  usageResetAt         DateTime? // When usage counters reset
   
   @@map("users")
 }

@@ -49,7 +49,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
   const { apiKey } = useTogetherApiKey();
   const [streamingText, setStreamingText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
-  const { transformationsData, isLoading: isLimitsLoading } = useLimits();
+  const { transformationsData, isTransformationsLoading } = useLimits();
 
   // Helper: get all transformations from server only
   const getAllTransformations = () => {

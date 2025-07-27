@@ -2,10 +2,11 @@ import { t, protectedProcedure } from "../init";
 import { getMinutesLeft, getTransformationsLeft } from "../../lib/limits";
 
 function extractLimitResult(result: any) {
+  // Only extract the properties we need to avoid React hydration issues
+  // Preserve null values for unlimited plans
   return {
-    remaining:
-      typeof result.remaining === "number" ? Number(result.remaining) : 0,
-    limit: typeof result.limit === "number" ? Number(result.limit) : 0,
+    remaining: result?.remaining !== undefined ? result.remaining : 0,
+    limit: result?.limit !== undefined ? result.limit : 0,
   };
 }
 
