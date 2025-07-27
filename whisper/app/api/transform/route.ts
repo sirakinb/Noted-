@@ -23,10 +23,7 @@ export async function POST(req: NextRequest) {
   const apiKey = req.headers.get("TogetherAPIToken") || undefined;
 
   // Check transformation limits
-  const limitResult = await limitTransformations({
-    clerkUserId: auth.userId,
-    isBringingKey: !!apiKey,
-  });
+  const limitResult = await limitTransformations(auth.userId);
 
   if (!limitResult.success) {
     return new Response(JSON.stringify({ error: "You have exceeded your daily transformation limit." }), {

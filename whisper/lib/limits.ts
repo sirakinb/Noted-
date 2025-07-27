@@ -14,6 +14,10 @@ const redis =
 
 const isLocal = process.env.NODE_ENV !== "production";
 
+// Simple in-memory counter for local development
+const localUsageCounters = new Map<string, { transformations: number; minutes: number; lastReset: number }>();
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
 const WINDOW = "1440 m"; // 1 day
 
 // Create rate limiters for different subscription tiers
@@ -145,12 +149,30 @@ export async function limitTransformations(userId: string) {
   const user = await getUserSubscription(userId);
   const planLimits = getPlanLimits(user?.subscriptionTier || null);
   
-  // For local development, still respect plan limits
+  // For local development, use in-memory counter
   if (isLocal || !redis || !rateLimiters) {
+    const now = Date.now();
+    const userCounter = localUsageCounters.get(userId);
+    
+    // Reset counter if it's been more than a day
+    if (!userCounter || (now - userCounter.lastReset) > DAY_IN_MS) {
+      localUsageCounters.set(userId, { transformations: 0, minutes: 0, lastReset: now });
+    }
+    
+    const currentUsage = localUsageCounters.get(userId)!;
+    const limit = planLimits.transformationsLimit || 0;
+    const remaining = limit === null ? 999999 : Math.max(0, limit - currentUsage.transformations);
+    const success = limit === null || remaining > 0;
+    
+    // Increment usage if successful
+    if (success && limit !== null) {
+      currentUsage.transformations++;
+    }
+    
     return {
-      success: planLimits.transformationsLimit === null || (planLimits.transformationsLimit || 0) > 0,
-      remaining: planLimits.transformationsLimit || 0, // Default to 0 transformations for trial
-      limit: planLimits.transformationsLimit || 0,
+      success,
+      remaining,
+      limit,
     };
   }
 
@@ -201,9 +223,21 @@ export async function getTransformationsLeft(userId: string) {
   const planLimits = getPlanLimits(user?.subscriptionTier || null);
   
   if (isLocal || !redis || !rateLimiters) {
+    const now = Date.now();
+    const userCounter = localUsageCounters.get(userId);
+    
+    // Reset counter if it's been more than a day
+    if (!userCounter || (now - userCounter.lastReset) > DAY_IN_MS) {
+      localUsageCounters.set(userId, { transformations: 0, minutes: 0, lastReset: now });
+    }
+    
+    const currentUsage = localUsageCounters.get(userId)!;
+    const limit = planLimits.transformationsLimit || 0;
+    const remaining = limit === null ? 999999 : Math.max(0, limit - currentUsage.transformations);
+    
     return {
-      remaining: planLimits.transformationsLimit || 0, // Default to 0 transformations for trial
-      limit: planLimits.transformationsLimit || 0,
+      remaining,
+      limit,
     };
   }
 
