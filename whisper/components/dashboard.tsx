@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MoreHorizontal, Search } from "lucide-react";
 import { RecordingModal } from "@/components/RecordingModal";
-import type { Transcription } from "@/app/page";
 import { UploadModal } from "./UploadModal";
 import { formatWhisperTimestamp } from "@/lib/utils";
 import Link from "next/link";
@@ -18,6 +17,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTRPC } from "@/trpc/client";
 import { useMutation } from "@tanstack/react-query";
+
+// Define the Transcription type based on the TRPC router return type
+interface Transcription {
+  id: string;
+  title: string;
+  content: string;
+  preview: string;
+  timestamp: string;
+}
 
 interface DashboardProps {
   transcriptions: Transcription[];
