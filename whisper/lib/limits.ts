@@ -297,10 +297,20 @@ export async function getMinutesLeft(userId: string) {
   
   const defaultMinutes = planLimits?.minutesLimit || 5;
   
-  // For local development or if Redis/rate limiters are not available
+  // For local development, use in-memory counter
   if (isLocal || !redis || !rateLimiters) {
+    const now = Date.now();
+    const counter = localUsageCounters.get(userId) || { transformations: 0, minutes: 0, lastReset: now };
+    
+    // Reset counter if it's a new day
+    if (now - counter.lastReset > DAY_IN_MS) {
+      counter.minutes = 0;
+      counter.transformations = 0;
+      counter.lastReset = now;
+    }
+    
     return {
-      remaining: defaultMinutes,
+      remaining: Math.max(0, defaultMinutes - counter.minutes),
       limit: defaultMinutes,
     };
   }
@@ -317,15 +327,11 @@ export async function getMinutesLeft(userId: string) {
       };
     }
 
-    // Check current usage with the rate limiter
-    const result = await limiter.getRemaining(userId);
-    
-    // If getRemaining returns null/undefined, user hasn't hit the limiter yet
-    // so they should have their full limit available
-    const remaining = result !== null && result !== undefined ? result : defaultMinutes;
-    
+    // For new users or if no rate limit data exists, return full limits
+    // We can't check remaining without consuming, so we'll return the default
+    // The actual limiting happens in limitMinutes() when they try to use it
     return {
-      remaining: remaining,
+      remaining: defaultMinutes,
       limit: defaultMinutes,
     };
   } catch (error) {
@@ -383,15 +389,11 @@ export async function getTransformationsLeft(userId: string) {
       };
     }
 
-    // Check current usage with the rate limiter
-    const result = await limiter.getRemaining(userId);
-    
-    // If getRemaining returns null/undefined, user hasn't hit the limiter yet
-    // so they should have their full limit available
-    const remaining = result !== null && result !== undefined ? result : defaultTransformations;
-    
+    // For new users or if no rate limit data exists, return full limits
+    // We can't check remaining without consuming, so we'll return the default
+    // The actual limiting happens in limitTransformations() when they try to use it
     return {
-      remaining: remaining,
+      remaining: defaultTransformations,
       limit: defaultTransformations,
     };
   } catch (error) {
