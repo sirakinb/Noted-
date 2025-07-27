@@ -5,22 +5,26 @@ const APP_NAME_HELICONE = "noted-app";
 
 export const togetheraiClient = createTogetherAI({
   apiKey: process.env.TOGETHER_API_KEY ?? "",
-  baseURL: "https://together.helicone.ai/v1",
-  headers: {
-    "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-    "Helicone-Property-AppName": APP_NAME_HELICONE,
-  },
+  ...(process.env.HELICONE_API_KEY ? {
+    baseURL: "https://together.helicone.ai/v1",
+    headers: {
+      "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
+      "Helicone-Property-AppName": APP_NAME_HELICONE,
+    },
+  } : {}),
 });
 
 // Dynamic TogetherAI client for client-side use
 export function togetherVercelAiClient(apiKey?: string) {
   return createTogetherAI({
     apiKey: apiKey || process.env.TOGETHER_API_KEY || "",
-    baseURL: "https://together.helicone.ai/v1",
-    headers: {
-      "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-      "Helicone-Property-AppName": APP_NAME_HELICONE,
-    },
+    ...(process.env.HELICONE_API_KEY ? {
+      baseURL: "https://together.helicone.ai/v1",
+      headers: {
+        "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
+        "Helicone-Property-AppName": APP_NAME_HELICONE,
+      },
+    } : {}),
   });
 }
 
@@ -33,7 +37,7 @@ export function togetherBaseClientWithKey(apiKey?: string) {
     baseSDKOptions.baseURL = "https://together.helicone.ai/v1";
     baseSDKOptions.defaultHeaders = {
       "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-      "Helicone-Property-Appname": APP_NAME_HELICONE,
+      "Helicone-Property-AppName": APP_NAME_HELICONE,
     };
   }
 

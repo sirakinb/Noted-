@@ -20,7 +20,7 @@ export const STRIPE_PUBLISHABLE_KEY = stripePublishableKey;
 export const STRIPE_PLANS = {
   starter: {
     displayName: 'Starter',
-    priceMonthly: 8.99,
+    priceMonthly: 0.10, // TESTING PRICE - Change back to 8.99 for production
     transformationsLimit: 50,
     minutesLimit: '8 hours of transcription per month',
     audioHoursLimit: 8, // 8 hours = 480 minutes
@@ -28,11 +28,11 @@ export const STRIPE_PLANS = {
     maxFileDuration: '2 hours per file',
     prioritySupport: false,
     stripeProductId: 'prod_Sk2SntebFrm1zd',
-    stripePriceId: 'price_1RoYNGCHgVkAnNskkc2FjgJ4',
+    stripePriceId: 'price_1RpJUMCHgVkAnNskbTlMy5xI', // TESTING PRICE ID - Change back to original for production
   },
   pro: {
     displayName: 'Pro',
-    priceMonthly: 12.99,
+    priceMonthly: 0.10, // TESTING PRICE - Change back to 12.99 for production
     transformationsLimit: null, // Unlimited
     minutesLimit: '25 hours of transcription per month',
     audioHoursLimit: 25, // 25 hours = 1500 minutes
