@@ -6,8 +6,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Edit3, Save, Trash2, Plus, Mic } from "lucide-react";
 import { RecordingModal } from "@/components/RecordingModal";
-import type { Transcription } from "@/app/page";
 import { useRouter } from "next/navigation";
+
+// Define the Transcription type based on the TRPC router return type
+interface Transcription {
+  id: string;
+  title: string;
+  content: string;
+  preview: string;
+  timestamp: string;
+  duration?: string; // Optional duration field
+}
 
 interface TranscriptionViewProps {
   transcription: Transcription;
