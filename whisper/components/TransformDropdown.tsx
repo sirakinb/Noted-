@@ -22,7 +22,7 @@ export function TransformDropdown({
       <DropdownMenuTrigger
         asChild
         disabled={
-          isStreaming || isLoading || transformationsData?.remaining === 0
+          isStreaming || isLoading || (transformationsData?.remaining !== null && transformationsData?.remaining !== undefined && transformationsData.remaining === 0)
         }
       >
         <button

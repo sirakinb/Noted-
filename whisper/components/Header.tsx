@@ -90,7 +90,9 @@ export function Header() {
               if (!isLoading) {
                 toast(
                   `You got ${
-                    transformationsData?.remaining ?? 0
+                    transformationsData?.remaining === null || transformationsData?.remaining === undefined
+                    ? "unlimited"
+                    : transformationsData.remaining
                   } transformations left for your notes`
                 );
               }
@@ -100,7 +102,9 @@ export function Header() {
             <p className="text-sm font-medium text-left text-[#1e2939]">
               {isLoading
                 ? "..."
-                : transformationsData?.remaining ?? 0}
+                : transformationsData?.remaining === null || transformationsData?.remaining === undefined
+                ? "∞"
+                : transformationsData.remaining}
             </p>
           </Button>
           <UserButton

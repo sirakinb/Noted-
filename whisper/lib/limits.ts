@@ -161,11 +161,21 @@ export async function limitTransformations(userId: string) {
     
     const currentUsage = localUsageCounters.get(userId)!;
     const limit = planLimits.transformationsLimit || 0;
-    const remaining = limit === null ? 999999 : Math.max(0, limit - currentUsage.transformations);
-    const success = limit === null || remaining > 0;
+    
+    // For unlimited plans (limit === null), always allow and return null for remaining
+    if (limit === null) {
+      return {
+        success: true,
+        remaining: null, // null indicates unlimited
+        limit: null,
+      };
+    }
+    
+    const remaining = Math.max(0, limit - currentUsage.transformations);
+    const success = remaining > 0;
     
     // Increment usage if successful
-    if (success && limit !== null) {
+    if (success) {
       currentUsage.transformations++;
     }
     
@@ -233,7 +243,9 @@ export async function getTransformationsLeft(userId: string) {
     
     const currentUsage = localUsageCounters.get(userId)!;
     const limit = planLimits.transformationsLimit || 0;
-    const remaining = limit === null ? 999999 : Math.max(0, limit - currentUsage.transformations);
+    
+    // For unlimited plans (limit === null), return null to indicate unlimited
+    const remaining = limit === null ? null : Math.max(0, limit - currentUsage.transformations);
     
     return {
       remaining,

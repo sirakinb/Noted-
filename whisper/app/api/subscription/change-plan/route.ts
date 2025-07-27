@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
         subscriptionId: true,
         subscriptionTier: true,
         subscriptionStatus: true,
+        subscriptionEndsAt: true,
       },
     });
 
@@ -53,79 +54,125 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If user has no active subscription, create a new one
-    if (!user.subscriptionId || user.subscriptionStatus !== 'active') {
+    // Check if user has an active subscription
+    if (!user.subscriptionStatus || user.subscriptionStatus !== 'active') {
       return NextResponse.json(
         { error: 'No active subscription to change. Please subscribe first.' },
         { status: 400 }
       );
     }
 
-    // Get the current subscription from Stripe
-    const subscriptions = await stripe.subscriptions.list({
-      customer: user.subscriptionId,
-      status: 'active',
-      limit: 1,
-    });
-
-    if (subscriptions.data.length === 0) {
-      return NextResponse.json(
-        { error: 'No active Stripe subscription found' },
-        { status: 404 }
-      );
-    }
-
-    const currentSubscription = subscriptions.data[0];
-    const currentPriceId = currentSubscription.items.data[0].price.id;
-
     // If they're already on this plan, no need to change
-    if (currentPriceId === newPlan.stripePriceId) {
+    if (user.subscriptionTier === newPlanId) {
       return NextResponse.json(
         { error: 'Already subscribed to this plan' },
         { status: 400 }
       );
     }
 
-    // Update the subscription with proration
-    const updatedSubscription = await stripe.subscriptions.update(
-      currentSubscription.id,
-      {
-        items: [
+    let updatedUser;
+
+    // If user has a Stripe subscription ID, use Stripe's proration
+    if (user.subscriptionId) {
+      try {
+        // Get the current subscription from Stripe
+        const subscriptions = await stripe.subscriptions.list({
+          customer: user.subscriptionId,
+          status: 'active',
+          limit: 1,
+        });
+
+        if (subscriptions.data.length === 0) {
+          return NextResponse.json(
+            { error: 'No active Stripe subscription found' },
+            { status: 404 }
+          );
+        }
+
+        const currentSubscription = subscriptions.data[0];
+        const currentPriceId = currentSubscription.items.data[0].price.id;
+
+        // If they're already on this plan, no need to change
+        if (currentPriceId === newPlan.stripePriceId) {
+          return NextResponse.json(
+            { error: 'Already subscribed to this plan' },
+            { status: 400 }
+          );
+        }
+
+        // Update the subscription with proration
+        const updatedSubscription = await stripe.subscriptions.update(
+          currentSubscription.id,
           {
-            id: currentSubscription.items.data[0].id,
-            price: newPlan.stripePriceId,
+            items: [
+              {
+                id: currentSubscription.items.data[0].id,
+                price: newPlan.stripePriceId,
+              },
+            ],
+            proration_behavior: 'create_prorations', // This creates prorated charges/credits
+            billing_cycle_anchor: 'now', // Start the new billing cycle immediately
+          }
+        );
+
+        // Update user in database
+        updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: {
+            subscriptionTier: newPlanId,
+            subscriptionStatus: updatedSubscription.status,
+            updatedAt: new Date(),
           },
-        ],
-        proration_behavior: 'create_prorations', // This creates prorated charges/credits
-        billing_cycle_anchor: 'now', // Start the new billing cycle immediately
+        });
+
+        return NextResponse.json({
+          success: true,
+          subscription: {
+            id: updatedSubscription.id,
+            status: updatedSubscription.status,
+            tier: newPlanId,
+            currentPeriodEnd: new Date((updatedSubscription as any).current_period_end * 1000),
+          },
+          user: {
+            id: updatedUser.id,
+            subscriptionTier: updatedUser.subscriptionTier,
+            subscriptionStatus: updatedUser.subscriptionStatus,
+          },
+          message: `Successfully upgraded to ${newPlan.displayName} plan with proration`,
+        });
+      } catch (stripeError) {
+        console.error('Stripe subscription update failed:', stripeError);
+        return NextResponse.json(
+          { error: 'Failed to update Stripe subscription' },
+          { status: 500 }
+        );
       }
-    );
+    } else {
+      // Manual subscription - just update the database
+      updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          subscriptionTier: newPlanId,
+          updatedAt: new Date(),
+        },
+      });
 
-    // Update user in database
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        subscriptionTier: newPlanId,
-        subscriptionStatus: updatedSubscription.status,
-        updatedAt: new Date(),
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      subscription: {
-        id: updatedSubscription.id,
-        status: updatedSubscription.status,
-        tier: newPlanId,
-        currentPeriodEnd: new Date((updatedSubscription as any).current_period_end * 1000),
-      },
-      user: {
-        id: updatedUser.id,
-        subscriptionTier: updatedUser.subscriptionTier,
-        subscriptionStatus: updatedUser.subscriptionStatus,
-      },
-      message: `Successfully upgraded to ${newPlan.displayName} plan`,
-    });
+      return NextResponse.json({
+        success: true,
+        subscription: {
+          id: null,
+          status: 'active',
+          tier: newPlanId,
+          currentPeriodEnd: user.subscriptionEndsAt,
+        },
+        user: {
+          id: updatedUser.id,
+          subscriptionTier: updatedUser.subscriptionTier,
+          subscriptionStatus: updatedUser.subscriptionStatus,
+        },
+        message: `Successfully upgraded to ${newPlan.displayName} plan`,
+      });
+    }
 
   } catch (error) {
     console.error('Error changing subscription plan:', error);
