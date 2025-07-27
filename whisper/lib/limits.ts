@@ -188,10 +188,19 @@ export async function limitMinutes(userId: string, minutesToDecrease: number) {
       const result = await limiter.limit(userId);
       if (!result.success) {
         success = false;
+        break; // Stop if we hit the limit
       }
       remaining = result.remaining;
       limit = result.limit;
       reset = result.reset;
+    }
+    
+    // Also track usage in Redis for display purposes
+    if (success) {
+      const usageKey = `usage:${userId}:minutes`;
+      await redis.incrby(usageKey, minutesToDecrease);
+      // Set expiry to reset monthly
+      await redis.expire(usageKey, 30 * 24 * 60 * 60); // 30 days
     }
     
     return {
@@ -273,6 +282,14 @@ export async function limitTransformations(userId: string) {
 
     const result = await limiter.limit(userId);
     
+    // Also track usage in Redis for display purposes
+    if (result.success) {
+      const usageKey = `usage:${userId}:transformations`;
+      await redis.incr(usageKey);
+      // Set expiry to reset monthly
+      await redis.expire(usageKey, 30 * 24 * 60 * 60); // 30 days
+    }
+    
     return {
       success: result.success,
       remaining: result.remaining,
@@ -327,11 +344,12 @@ export async function getMinutesLeft(userId: string) {
       };
     }
 
-    // For new users or if no rate limit data exists, return full limits
-    // We can't check remaining without consuming, so we'll return the default
-    // The actual limiting happens in limitMinutes() when they try to use it
+    // Check actual usage from Redis without consuming rate limiter tokens
+    const usageKey = `usage:${userId}:minutes`;
+    const currentUsage = await redis.get(usageKey) || 0;
+    
     return {
-      remaining: defaultMinutes,
+      remaining: Math.max(0, defaultMinutes - (currentUsage as number)),
       limit: defaultMinutes,
     };
   } catch (error) {
@@ -389,11 +407,12 @@ export async function getTransformationsLeft(userId: string) {
       };
     }
 
-    // For new users or if no rate limit data exists, return full limits
-    // We can't check remaining without consuming, so we'll return the default
-    // The actual limiting happens in limitTransformations() when they try to use it
+    // Check actual usage from Redis without consuming rate limiter tokens
+    const usageKey = `usage:${userId}:transformations`;
+    const currentUsage = await redis.get(usageKey) || 0;
+    
     return {
-      remaining: defaultTransformations,
+      remaining: Math.max(0, defaultTransformations - (currentUsage as number)),
       limit: defaultTransformations,
     };
   } catch (error) {
